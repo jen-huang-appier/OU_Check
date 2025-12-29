@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Universal Link & Onelink Validator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="card">
+    <h2>🔗 Universal Link & Onelink Validator</h2>
+    <div class="input-row">
+        <input type="text" id="urlInput" placeholder="Enter URL (e.g. https://coupang.onelink.me)">
+        <button onclick="check()">Validate Now</button>
+    </div>
+
+    <div class="results" id="results" style="display:none">
+        <div id="iosBox" class="os-box">
+            <h3>🍎 iOS (AASA)</h3>
+            <div id="iosStatus" class="status-tag"></div>
+            <div><strong>Declared Paths:</strong> <span id="iosPaths" class="value-box"></span></div>
+            <pre id="iosRaw"></pre>
+        </div>
+        <div id="androidBox" class="os-box">
+            <h3>🤖 Android (AssetLinks)</h3>
+            <div id="androidStatus" class="status-tag"></div>
+            <div><strong>Package Name:</strong> <span id="androidPackage" class="value-box"></span></div>
+            <div><strong>Fingerprints:</strong> <span id="androidFinger" class="value-box"></span></div>
+            <pre id="androidRaw"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+async function check() {
+    const url = document.getElementById('urlInput').value.trim();
+    if(!url) return alert("Please enter a URL");
+
+    try {
+        // 注意：Netlify 部署後路徑將透過 netlify.toml 轉發至 Serverless Function
+        const res = await fetch('/api/validate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ url })
+        });
+        const data = await res.json();
+        document.getElementById('results').style.display = 'grid';
+
+        // iOS logic
+        const iosBox = document.getElementById('iosBox');
+        const isIosPass = data.ios.status === 'Found' && data.ios.pathMatch === true;
+        iosBox.className = 'os-box ' + (isIosPass ? 'pass' : 'fail');
+        document.getElementById('iosStatus').innerText = isIosPass ? "✅ PASS: Configuration Found" : "❌ FAIL: Missing 'paths' content";
+        document.getElementById('iosPaths').innerText = data.ios.declaredPaths?.length ? data.ios.declaredPaths.join(', ') : 'None';
+        document.getElementById('iosRaw').innerText = JSON.stringify(data.ios.details, null, 4);
+
+        // Android logic
+        const androidBox = document.getElementById('androidBox');
+        const hasAndroid = data.android.status === 'Found';
+        androidBox.className = 'os-box ' + (hasAndroid ? 'pass' : 'fail');
+        document.getElementById('androidStatus').innerText = hasAndroid ? "✅ PASS: AssetLinks Found" : "❌ FAIL: File Missing";
+        document.getElementById('androidPackage').innerText = data.android.details?.[0]?.target?.package_name || 'N/A';
+        document.getElementById('androidFinger').innerText = data.android.details?.[0]?.target?.sha256_cert_fingerprints?.join('\n') || 'N/A';
+        document.getElementById('androidRaw').innerText = JSON.stringify(data.android.details, null, 4);
+    } catch (e) { 
+        console.error(e);
+        alert("Error during validation.");
+    }
+}
+</script>
+</body>
+</html>
