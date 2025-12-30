@@ -51,7 +51,7 @@ button:hover {
 }
 
 .os-box {
-    padding: 20px;
+    padding: 30px;
     border-radius: 12px;
     border: 1px solid #eef2f6;
     background: #fcfdfe;
@@ -59,7 +59,6 @@ button:hover {
     overflow: hidden;
 }
 
-/* 解決指紋長字串超出框框的關鍵樣式 */
 .value-box {
     display: block;
     background: #f1f3f5;
@@ -71,7 +70,7 @@ button:hover {
     margin-top: 6px;
     white-space: pre-wrap;
     word-break: break-all;
-    overflow-wrap: anywhere; /* 強制長字串換行 */
+    overflow-wrap: anywhere; 
 }
 
 .status-tag {
@@ -99,12 +98,29 @@ button:hover {
     background: #fef2f2;
 }
 
+.warning {
+    border-top-color: #ff9800; 
+}
+
+.warning .status-tag {
+    color: #ff9800;
+    background: #fff3e0;
+}
+
+
 pre {
     background: #1e1e1e;
     color: #d4d4d4;
     padding: 15px;
     border-radius: 8px;
-    overflow: auto;
     font-size: 11px;
-    max-height: 250px;
+    
+    /* 關鍵屬性：讓 pre 標籤也可以被拖拉 */
+    resize: both; /* 允許水平和垂直拖拉 */
+    overflow: auto; /* 必須搭配 overflow 使用 resize 才會生效 */
+    
+    /* 設定最小與最大高度，防止拉到不見或撐破螢幕 */
+    min-height: 100px;
+    max-height: 800px; 
+    width: 100%;
 }

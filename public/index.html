@@ -37,7 +37,6 @@ async function check() {
     if(!url) return alert("Please enter a URL");
 
     try {
-        // 注意：Netlify 部署後路徑將透過 netlify.toml 轉發至 Serverless Function
         const res = await fetch('/api/validate', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -46,22 +45,48 @@ async function check() {
         const data = await res.json();
         document.getElementById('results').style.display = 'grid';
 
-        // iOS logic
+        // --- iOS logic ---
         const iosBox = document.getElementById('iosBox');
-        const isIosPass = data.ios.status === 'Found' && data.ios.pathMatch === true;
-        iosBox.className = 'os-box ' + (isIosPass ? 'pass' : 'fail');
-        document.getElementById('iosStatus').innerText = isIosPass ? "✅ PASS: Configuration Found" : "❌ FAIL: Missing 'paths' content";
-        document.getElementById('iosPaths').innerText = data.ios.declaredPaths?.length ? data.ios.declaredPaths.join(', ') : 'None';
-        document.getElementById('iosRaw').innerText = JSON.stringify(data.ios.details, null, 4);
+        const iosData = data.ios;
 
-        // Android logic
+        // 根據後端回傳的 validationStatus 設定不同的 UI
+        switch(iosData.validationStatus) {
+            case 'pass':
+                iosBox.className = 'os-box pass';
+                document.getElementById('iosStatus').innerText = `✅ PASS: Configuration Valid (${data.mmpType.toUpperCase()})`;
+                break;
+            case 'warning':
+                // 需在 CSS 中加入 .warning 類別
+                iosBox.className = 'os-box warning';
+                document.getElementById('iosStatus').innerText = `⚠️ ${iosData.message}`;
+                break;
+            case 'fail':
+                iosBox.className = 'os-box fail';
+                document.getElementById('iosStatus').innerText = `❌ FAIL: ${iosData.message}`;
+                break;
+            default:
+                // 其他 MMP (mmpType === "other") 只顯示基本資訊
+                iosBox.className = 'os-box';
+                document.getElementById('iosStatus').innerText = `ℹ️ MMP: ${data.mmpType.toUpperCase()} (Manual Check Required)`;
+        }
+
+        document.getElementById('iosPaths').innerText = iosData.declaredPaths.length ? iosData.declaredPaths.join(', ') : 'N/A';
+        document.getElementById('iosRaw').innerText = JSON.stringify(iosData.details, null, 4);
+
+        // --- Android logic ---
         const androidBox = document.getElementById('androidBox');
         const hasAndroid = data.android.status === 'Found';
         androidBox.className = 'os-box ' + (hasAndroid ? 'pass' : 'fail');
         document.getElementById('androidStatus').innerText = hasAndroid ? "✅ PASS: AssetLinks Found" : "❌ FAIL: File Missing";
-        document.getElementById('androidPackage').innerText = data.android.details?.[0]?.target?.package_name || 'N/A';
-        document.getElementById('androidFinger').innerText = data.android.details?.[0]?.target?.sha256_cert_fingerprints?.join('\n') || 'N/A';
+        // 只有在有資料時才嘗試讀取 Package Name
+        const packageName = data.android.details?.[0]?.target?.package_name;
+        const fingerprints = data.android.details?.[0]?.target?.sha256_cert_fingerprints;
+
+        document.getElementById('androidPackage').innerText = packageName || 'None Found';
+        // fix SHA256 fingerprints display out of box
+        document.getElementById('androidFinger').innerText = fingerprints ? fingerprints.join('\n') : 'None Found';
         document.getElementById('androidRaw').innerText = JSON.stringify(data.android.details, null, 4);
+
     } catch (e) { 
         console.error(e);
         alert("Error during validation.");
