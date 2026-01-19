@@ -114,12 +114,9 @@ pre {
     padding: 15px;
     border-radius: 8px;
     font-size: 11px;
-    
-    /* 關鍵屬性：讓 pre 標籤也可以被拖拉 */
-    resize: both; /* 允許水平和垂直拖拉 */
-    overflow: auto; /* 必須搭配 overflow 使用 resize 才會生效 */
-    
-    /* 設定最小與最大高度，防止拉到不見或撐破螢幕 */
+    /* 可以被拖拉 */
+    resize: both; 
+    overflow: auto; 
     min-height: 100px;
     max-height: 800px; 
     width: 100%;
